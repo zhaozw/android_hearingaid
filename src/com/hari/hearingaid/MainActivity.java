@@ -21,7 +21,7 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 
 		final ListView listview = (ListView) findViewById(R.id.listview);
-		String[] values = new String[] { "TTS", "STT", "Safety" };
+		String[] values = new String[] { "TTS", "Alarm", "Safety" };
 
 		final ArrayList<String> list = new ArrayList<String>();
 		for (int i = 0; i < values.length; ++i) {
