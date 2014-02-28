@@ -21,6 +21,7 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 
 		final ListView listview = (ListView) findViewById(R.id.listview);
+		//Items on the list
 		String[] values = new String[] { "TTS", "Alarm", "Safety" };
 
 		final ArrayList<String> list = new ArrayList<String>();
@@ -36,9 +37,9 @@ public class MainActivity extends Activity {
 			@Override
 			public void onItemClick(AdapterView<?> parent, final View view,
 					int position, long id) {
-				//final String item = (String) parent.getItemAtPosition(position);
 				if (position==0)
 				{
+					//Call the TTS activity when the first item is pressed
 					speakText(getCurrentFocus());
 				}
 			}
