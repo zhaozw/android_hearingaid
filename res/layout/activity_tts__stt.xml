@@ -28,6 +28,17 @@
       android:onClick="speakText"
       android:text="@string/text1" />
    
-
+ <TextView
+        android:id="@+id/txtText"
+        android:layout_width="match_parent"
+        android:layout_height="200dip"
+        android:layout_below="@+id/button1" />
+ <Button
+      android:id="@+id/button2"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_below="@+id/txtText"
+      android:layout_centerHorizontal="true"
+      android:text="@string/text2" />
    
 </RelativeLayout>
