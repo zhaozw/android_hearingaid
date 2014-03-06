@@ -21,8 +21,8 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 
 		final ListView listview = (ListView) findViewById(R.id.listview);
-		//listview.text
-		//Items on the list
+		// listview.text
+		// Items on the list
 		String[] values = new String[] { "Talk & Listen", "Set Alarm", "Safety" };
 
 		final ArrayList<String> list = new ArrayList<String>();
@@ -38,20 +38,29 @@ public class MainActivity extends Activity {
 			@Override
 			public void onItemClick(AdapterView<?> parent, final View view,
 					int position, long id) {
-				if (position==0)
-				{
-					//Call the TTS activity when the first item is pressed
+				if (position == 0) {
+					// Call the TTS activity when the first item is pressed
 					speakText(getCurrentFocus());
+				}
+				else if (position==1)
+				{
+					classify(getCurrentFocus());
 				}
 			}
 
 		});
 	}
-	public void speakText(View view) {
-Intent intent = new Intent(this, TTS_STT.class);
-startActivity(intent);
-}
 
+	public void speakText(View view) {
+		Intent intent = new Intent(this, TTS_STT.class);
+		startActivity(intent);
+	}
+
+	public void classify(View view) {
+		Intent intent = new Intent(this, Classify.class);
+		startActivity(intent);
+	}
+	
 	private class StableArrayAdapter extends ArrayAdapter<String> {
 
 		HashMap<String, Integer> mIdMap = new HashMap<String, Integer>();

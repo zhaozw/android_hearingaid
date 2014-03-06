@@ -7,5 +7,7 @@
     <string name="text2">Speech to Text</string>
     <string name="write">Write Text</string>
     <string name="title_activity_tts__stt">Talk and Listen</string>
+    <string name="title_activity_classify">Classify</string>
+    <string name="hello_world">Hello world!</string>
 
 </resources>
