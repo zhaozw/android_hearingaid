@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.media.audiofx.Visualizer;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -17,7 +18,7 @@ import android.widget.LinearLayout;
 public class Classify extends Activity {
 	private static final String LOG_TAG = "AudioRecordTest";
 	private static String mFileName = null;
-
+	private Visualizer mVis;
 	private RecordButton mRecordButton = null;
 	private MediaRecorder mRecorder = null;
 
@@ -141,6 +142,7 @@ public class Classify extends Activity {
 				ViewGroup.LayoutParams.WRAP_CONTENT,
 				ViewGroup.LayoutParams.WRAP_CONTENT, 0));
 		setContentView(ll);
+		//mVis.setEnabled(true);
 	}
 
 	@Override
