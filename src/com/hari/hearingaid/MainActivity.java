@@ -23,7 +23,7 @@ public class MainActivity extends Activity {
 		final ListView listview = (ListView) findViewById(R.id.listview);
 		// listview.text
 		// Items on the list
-		String[] values = new String[] { "Talk & Listen", "Set Alarm", "Safety" };
+		String[] values = new String[] { "Talk & Listen", "Classification using Visualizer", "Vibrator Alarm" };
 
 		final ArrayList<String> list = new ArrayList<String>();
 		for (int i = 0; i < values.length; ++i) {

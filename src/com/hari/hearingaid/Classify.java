@@ -8,169 +8,185 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.media.audiofx.Equalizer;
 import android.media.audiofx.Visualizer;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 public class Classify extends Activity {
-    private static final String TAG = "AudioFxDemo";
+	private static final String TAG = "AudioFxDemo";
 
-    private static final float VISUALIZER_HEIGHT_DIP = 50f;
+	private static final float VISUALIZER_HEIGHT_DIP = 150f;
 
-    private MediaPlayer mMediaPlayer;
-    private Visualizer mVisualizer;
-    private Equalizer mEqualizer;
+	private MediaPlayer mMediaPlayer;
+	private Visualizer mVisualizer;
+	// private Equalizer mEqualizer;
+	private LinearLayout mLinearLayout;
+	private VisualizerView mVisualizerView;
+	private TextView mStatusTextView;
+	private TextView mTry;
 
-    private LinearLayout mLinearLayout;
-    private VisualizerView mVisualizerView;
-    private TextView mStatusTextView;
+	@Override
+	public void onCreate(Bundle icicle) {
+		super.onCreate(icicle);
 
-    @Override
-    public void onCreate(Bundle icicle) {
-        super.onCreate(icicle);
+		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+		mStatusTextView = new TextView(this);
 
-        mStatusTextView = new TextView(this);
+		mLinearLayout = new LinearLayout(this);
+		mLinearLayout.setOrientation(LinearLayout.VERTICAL);
+		mLinearLayout.addView(mStatusTextView);
+		setContentView(mLinearLayout);
+		//Context context = getApplicationContext();
+		// Create the MediaPlayer
+		mMediaPlayer = MediaPlayer.create(this, R.raw.car);
+		/*InputStream inStream = context.getResources().openRawResource(R.raw.car);
+		 try {
+			byte[] music = new byte[inStream.available()];
+			//int musicfft = mVisualizer.getFft(music);
+			Log.d("try","harry");
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
+		Log.d(TAG,
+				"MediaPlayer audio session ID: "
+						+ mMediaPlayer.getAudioSessionId());
 
-        mLinearLayout = new LinearLayout(this);
-        mLinearLayout.setOrientation(LinearLayout.VERTICAL);
-        mLinearLayout.addView(mStatusTextView);
+		setupVisualizerFxAndUI();
+		// setupEqualizerFxAndUI();
 
-        setContentView(mLinearLayout);
+		// Make sure the visualizer is enabled only when you actually want to
+		// receive data, and
+		// when it makes sense to receive data.
+		mVisualizer.setEnabled(true);
 
-        // Create the MediaPlayer
-        mMediaPlayer = MediaPlayer.create(this, R.raw.car);
-        Log.d(TAG, "MediaPlayer audio session ID: " + mMediaPlayer.getAudioSessionId());
+		// When the stream ends, we don't need to collect any more data. We
+		// don't do this in
+		// setupVisualizerFxAndUI because we likely want to have more,
+		// non-Visualizer related code
+		// in this callback.
+		mMediaPlayer
+				.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+					public void onCompletion(MediaPlayer mediaPlayer) {
+						mVisualizer.setEnabled(false);
+					}
+				});
 
-        setupVisualizerFxAndUI();
-        setupEqualizerFxAndUI();
+		mMediaPlayer.start();
+		mStatusTextView.setText("Playing audio...");
+	}
 
-        // Make sure the visualizer is enabled only when you actually want to receive data, and
-        // when it makes sense to receive data.
-        mVisualizer.setEnabled(true);
+	/*
+	 * private void setupEqualizerFxAndUI() { // Create the Equalizer object (an
+	 * AudioEffect subclass) and attach it to our media player, // with a
+	 * default priority (0). mEqualizer = new Equalizer(0,
+	 * mMediaPlayer.getAudioSessionId()); mEqualizer.setEnabled(true);
+	 * 
+	 * TextView eqTextView = new TextView(this);
+	 * eqTextView.setText("Equalizer:"); mLinearLayout.addView(eqTextView);
+	 * 
+	 * short bands = mEqualizer.getNumberOfBands();
+	 * 
+	 * final short minEQLevel = mEqualizer.getBandLevelRange()[0]; final short
+	 * maxEQLevel = mEqualizer.getBandLevelRange()[1];
+	 * 
+	 * for (short i = 0; i < bands; i++) { final short band = i;
+	 * 
+	 * TextView freqTextView = new TextView(this);
+	 * freqTextView.setLayoutParams(new ViewGroup.LayoutParams(
+	 * ViewGroup.LayoutParams.MATCH_PARENT,
+	 * ViewGroup.LayoutParams.WRAP_CONTENT));
+	 * freqTextView.setGravity(Gravity.CENTER_HORIZONTAL);
+	 * freqTextView.setText((mEqualizer.getCenterFreq(band) / 1000) + " Hz");
+	 * mLinearLayout.addView(freqTextView);
+	 * 
+	 * LinearLayout row = new LinearLayout(this);
+	 * row.setOrientation(LinearLayout.HORIZONTAL);
+	 * 
+	 * TextView minDbTextView = new TextView(this);
+	 * minDbTextView.setLayoutParams(new ViewGroup.LayoutParams(
+	 * ViewGroup.LayoutParams.WRAP_CONTENT,
+	 * ViewGroup.LayoutParams.WRAP_CONTENT)); minDbTextView.setText((minEQLevel
+	 * / 100) + " dB");
+	 * 
+	 * TextView maxDbTextView = new TextView(this);
+	 * maxDbTextView.setLayoutParams(new ViewGroup.LayoutParams(
+	 * ViewGroup.LayoutParams.WRAP_CONTENT,
+	 * ViewGroup.LayoutParams.WRAP_CONTENT)); maxDbTextView.setText((maxEQLevel
+	 * / 100) + " dB");
+	 * 
+	 * LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+	 * ViewGroup.LayoutParams.MATCH_PARENT,
+	 * ViewGroup.LayoutParams.WRAP_CONTENT); layoutParams.weight = 1; SeekBar
+	 * bar = new SeekBar(this); bar.setLayoutParams(layoutParams);
+	 * bar.setMax(maxEQLevel - minEQLevel);
+	 * bar.setProgress(mEqualizer.getBandLevel(band));
+	 * 
+	 * bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+	 * public void onProgressChanged(SeekBar seekBar, int progress, boolean
+	 * fromUser) { mEqualizer.setBandLevel(band, (short) (progress +
+	 * minEQLevel)); }
+	 * 
+	 * public void onStartTrackingTouch(SeekBar seekBar) {} public void
+	 * onStopTrackingTouch(SeekBar seekBar) {} });
+	 * 
+	 * row.addView(minDbTextView); row.addView(bar); row.addView(maxDbTextView);
+	 * 
+	 * mLinearLayout.addView(row); } }
+	 */
 
-        // When the stream ends, we don't need to collect any more data. We don't do this in
-        // setupVisualizerFxAndUI because we likely want to have more, non-Visualizer related code
-        // in this callback.
-        mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            public void onCompletion(MediaPlayer mediaPlayer) {
-                mVisualizer.setEnabled(false);
-            }
-        });
+	private void setupVisualizerFxAndUI() {
+		// Create a VisualizerView (defined below), which will render the
+		// simplified audio
+		// wave form to a Canvas.
+		mVisualizerView = new VisualizerView(this);
+		mTry = new TextView(this);
+		mVisualizerView.setLayoutParams(new ViewGroup.LayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT,
+				(int) (VISUALIZER_HEIGHT_DIP * getResources()
+						.getDisplayMetrics().density)));
+		mLinearLayout.addView(mVisualizerView);
+		mLinearLayout.addView(mTry);
+		//mTry.setText("Hey there!");
+		// Create the Visualizer object and attach it to our media player.
+		mVisualizer = new Visualizer(mMediaPlayer.getAudioSessionId());
+		mVisualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
 
-        mMediaPlayer.start();
-        mStatusTextView.setText("Playing audio...");
-    }
+		mVisualizer.setDataCaptureListener(
+				new Visualizer.OnDataCaptureListener() {
+					public void onWaveFormDataCapture(Visualizer visualizer,
+							byte[] bytes, int samplingRate) {
+						mVisualizerView.updateVisualizer(bytes);
+					}
 
-    private void setupEqualizerFxAndUI() {
-        // Create the Equalizer object (an AudioEffect subclass) and attach it to our media player,
-        // with a default priority (0).
-        mEqualizer = new Equalizer(0, mMediaPlayer.getAudioSessionId());
-        mEqualizer.setEnabled(true);
+					public void onFftDataCapture(Visualizer visualizer,
+							byte[] bytes, int samplingRate) {
+						mVisualizerView.updateVisualizerFFT(bytes);
 
-        TextView eqTextView = new TextView(this);
-        eqTextView.setText("Equalizer:");
-        mLinearLayout.addView(eqTextView);
+						String str = new String(bytes);
+						Log.d("try", "str");
+						mTry.setText(str);
+					}
+				}, Visualizer.getMaxCaptureRate() / 2, true, false);
+	}
 
-        short bands = mEqualizer.getNumberOfBands();
+	@Override
+	protected void onPause() {
+		super.onPause();
 
-        final short minEQLevel = mEqualizer.getBandLevelRange()[0];
-        final short maxEQLevel = mEqualizer.getBandLevelRange()[1];
-
-        for (short i = 0; i < bands; i++) {
-            final short band = i;
-
-            TextView freqTextView = new TextView(this);
-            freqTextView.setLayoutParams(new ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT));
-            freqTextView.setGravity(Gravity.CENTER_HORIZONTAL);
-            freqTextView.setText((mEqualizer.getCenterFreq(band) / 1000) + " Hz");
-            mLinearLayout.addView(freqTextView);
-
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-
-            TextView minDbTextView = new TextView(this);
-            minDbTextView.setLayoutParams(new ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT));
-            minDbTextView.setText((minEQLevel / 100) + " dB");
-
-            TextView maxDbTextView = new TextView(this);
-            maxDbTextView.setLayoutParams(new ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT));
-            maxDbTextView.setText((maxEQLevel / 100) + " dB");
-
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-            layoutParams.weight = 1;
-            SeekBar bar = new SeekBar(this);
-            bar.setLayoutParams(layoutParams);
-            bar.setMax(maxEQLevel - minEQLevel);
-            bar.setProgress(mEqualizer.getBandLevel(band));
-
-            bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                public void onProgressChanged(SeekBar seekBar, int progress,
-                        boolean fromUser) {
-                    mEqualizer.setBandLevel(band, (short) (progress + minEQLevel));
-                }
-
-                public void onStartTrackingTouch(SeekBar seekBar) {}
-                public void onStopTrackingTouch(SeekBar seekBar) {}
-            });
-
-            row.addView(minDbTextView);
-            row.addView(bar);
-            row.addView(maxDbTextView);
-
-            mLinearLayout.addView(row);
-        }
-    }
-
-    private void setupVisualizerFxAndUI() {
-        // Create a VisualizerView (defined below), which will render the simplified audio
-        // wave form to a Canvas.
-        mVisualizerView = new VisualizerView(this);
-        mVisualizerView.setLayoutParams(new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                (int)(VISUALIZER_HEIGHT_DIP * getResources().getDisplayMetrics().density)));
-        mLinearLayout.addView(mVisualizerView);
-
-        // Create the Visualizer object and attach it to our media player.
-        mVisualizer = new Visualizer(mMediaPlayer.getAudioSessionId());
-        mVisualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
-        mVisualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
-            public void onWaveFormDataCapture(Visualizer visualizer, byte[] bytes,
-                    int samplingRate) {
-                mVisualizerView.updateVisualizer(bytes);
-            }
-
-            public void onFftDataCapture(Visualizer visualizer, byte[] bytes, int samplingRate) {}
-        }, Visualizer.getMaxCaptureRate() / 2, true, false);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        if (isFinishing() && mMediaPlayer != null) {
-            mVisualizer.release();
-            mEqualizer.release();
-            mMediaPlayer.release();
-            mMediaPlayer = null;
-        }
-    }
+		if (isFinishing() && mMediaPlayer != null) {
+			mVisualizer.release();
+			// mEqualizer.release();
+			mMediaPlayer.release();
+			mMediaPlayer = null;
+		}
+	}
 }
 
 /**
@@ -178,53 +194,61 @@ public class Classify extends Activity {
  * {@link Visualizer.OnDataCaptureListener#onWaveFormDataCapture }
  */
 class VisualizerView extends View {
-    private byte[] mBytes;
-    private float[] mPoints;
-    private Rect mRect = new Rect();
+	private byte[] mBytes;
+	protected byte[] mFFTBytes;
+	private float[] mPoints;
 
-    private Paint mForePaint = new Paint();
+	private Rect mRect = new Rect();
 
-    public VisualizerView(Context context) {
-        super(context);
-        init();
-    }
+	private Paint mForePaint = new Paint();
 
-    private void init() {
-        mBytes = null;
+	public VisualizerView(Context context) {
+		super(context);
+		init();
+	}
 
-        mForePaint.setStrokeWidth(1f);
-        mForePaint.setAntiAlias(true);
-        mForePaint.setColor(Color.rgb(0, 128, 255));
-    }
+	private void init() {
+		mBytes = null;
 
-    public void updateVisualizer(byte[] bytes) {
-        mBytes = bytes;
-        invalidate();
-    }
+		mForePaint.setStrokeWidth(1f);
+		mForePaint.setAntiAlias(true);
+		mForePaint.setColor(Color.rgb(0, 128, 255));
+	}
 
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
+	public void updateVisualizer(byte[] bytes) {
+		mBytes = bytes;
+		invalidate();
+	}
 
-        if (mBytes == null) {
-            return;
-        }
+	public void updateVisualizerFFT(byte[] bytes) {
+		mFFTBytes = bytes;
+		invalidate();
+	}
 
-        if (mPoints == null || mPoints.length < mBytes.length * 4) {
-            mPoints = new float[mBytes.length * 4];
-        }
+	@Override
+	protected void onDraw(Canvas canvas) {
+		super.onDraw(canvas);
 
-        mRect.set(0, 0, getWidth(), getHeight());
+		if (mBytes == null) {
+			return;
+		}
 
-        for (int i = 0; i < mBytes.length - 1; i++) {
-            mPoints[i * 4] = mRect.width() * i / (mBytes.length - 1);
-            mPoints[i * 4 + 1] = mRect.height() / 2
-                    + ((byte) (mBytes[i] + 128)) * (mRect.height() / 2) / 128;
-            mPoints[i * 4 + 2] = mRect.width() * (i + 1) / (mBytes.length - 1);
-            mPoints[i * 4 + 3] = mRect.height() / 2
-                    + ((byte) (mBytes[i + 1] + 128)) * (mRect.height() / 2) / 128;
-        }
+		if (mPoints == null || mPoints.length < mBytes.length * 4) {
+			mPoints = new float[mBytes.length * 4];
+		}
 
-        canvas.drawLines(mPoints, mForePaint);
-    }
+		mRect.set(0, 0, getWidth(), getHeight());
+
+		for (int i = 0; i < mBytes.length - 1; i++) {
+			mPoints[i * 4] = mRect.width() * i / (mBytes.length - 1);
+			mPoints[i * 4 + 1] = mRect.height() / 2
+					+ ((byte) (mBytes[i] + 128)) * (mRect.height() / 2) / 128;
+			mPoints[i * 4 + 2] = mRect.width() * (i + 1) / (mBytes.length - 1);
+			mPoints[i * 4 + 3] = mRect.height() / 2
+					+ ((byte) (mBytes[i + 1] + 128)) * (mRect.height() / 2)
+					/ 128;
+		}
+
+		canvas.drawLines(mPoints, mForePaint);
+	}
 }
