@@ -1,254 +1,149 @@
 package com.hari.hearingaid;
 
 import android.app.Activity;
-import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.media.audiofx.Visualizer;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.ImageView;
+import ca.uol.aig.fftpack.RealDoubleFFT;
 
-public class Classify extends Activity {
-	private static final String TAG = "AudioFxDemo";
+public class Classify extends Activity implements OnClickListener {
 
-	private static final float VISUALIZER_HEIGHT_DIP = 150f;
+    int frequency = 8000;
+    @SuppressWarnings("deprecation")
+	int channelConfiguration = AudioFormat.CHANNEL_CONFIGURATION_MONO;
+    int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
+    private RealDoubleFFT transformer;
+    int blockSize = 256;
 
-	private MediaPlayer mMediaPlayer;
-	private Visualizer mVisualizer;
-	// private Equalizer mEqualizer;
-	private LinearLayout mLinearLayout;
-	private VisualizerView mVisualizerView;
-	private TextView mStatusTextView;
-	private TextView mTry;
+    Button startStopButton;
+    boolean started = false;
 
-	@Override
-	public void onCreate(Bundle icicle) {
-		super.onCreate(icicle);
+    RecordAudio recordTask;
 
-		setVolumeControlStream(AudioManager.STREAM_MUSIC);
+    ImageView imageView;
+    Bitmap bitmap;
+    Canvas canvas;
+    Paint paint;
 
-		mStatusTextView = new TextView(this);
+    //AudioRecord audioRecord;
 
-		mLinearLayout = new LinearLayout(this);
-		mLinearLayout.setOrientation(LinearLayout.VERTICAL);
-		mLinearLayout.addView(mStatusTextView);
-		setContentView(mLinearLayout);
-		//Context context = getApplicationContext();
-		// Create the MediaPlayer
-		mMediaPlayer = MediaPlayer.create(this, R.raw.car);
-		/*InputStream inStream = context.getResources().openRawResource(R.raw.car);
-		 try {
-			byte[] music = new byte[inStream.available()];
-			//int musicfft = mVisualizer.getFft(music);
-			Log.d("try","harry");
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
-		Log.d(TAG,
-				"MediaPlayer audio session ID: "
-						+ mMediaPlayer.getAudioSessionId());
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_classify);
 
-		setupVisualizerFxAndUI();
-		// setupEqualizerFxAndUI();
+        startStopButton = (Button) this.findViewById(R.id.StartStopButton);
+        startStopButton.setOnClickListener(this);
 
-		// Make sure the visualizer is enabled only when you actually want to
-		// receive data, and
-		// when it makes sense to receive data.
-		mVisualizer.setEnabled(true);
+        transformer = new RealDoubleFFT(blockSize);
 
-		// When the stream ends, we don't need to collect any more data. We
-		// don't do this in
-		// setupVisualizerFxAndUI because we likely want to have more,
-		// non-Visualizer related code
-		// in this callback.
-		mMediaPlayer
-				.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-					public void onCompletion(MediaPlayer mediaPlayer) {
-						mVisualizer.setEnabled(false);
-					}
-				});
+        imageView = (ImageView) this.findViewById(R.id.ImageView01);
+        bitmap = Bitmap.createBitmap((int) 256, (int) 100,
+                Bitmap.Config.ARGB_8888);
+        canvas = new Canvas(bitmap);
+        paint = new Paint();
+        paint.setColor(Color.GREEN);
+        imageView.setImageBitmap(bitmap);
 
-		mMediaPlayer.start();
-		mStatusTextView.setText("Playing audio...");
-	}
+    }
 
-	/*
-	 * private void setupEqualizerFxAndUI() { // Create the Equalizer object (an
-	 * AudioEffect subclass) and attach it to our media player, // with a
-	 * default priority (0). mEqualizer = new Equalizer(0,
-	 * mMediaPlayer.getAudioSessionId()); mEqualizer.setEnabled(true);
-	 * 
-	 * TextView eqTextView = new TextView(this);
-	 * eqTextView.setText("Equalizer:"); mLinearLayout.addView(eqTextView);
-	 * 
-	 * short bands = mEqualizer.getNumberOfBands();
-	 * 
-	 * final short minEQLevel = mEqualizer.getBandLevelRange()[0]; final short
-	 * maxEQLevel = mEqualizer.getBandLevelRange()[1];
-	 * 
-	 * for (short i = 0; i < bands; i++) { final short band = i;
-	 * 
-	 * TextView freqTextView = new TextView(this);
-	 * freqTextView.setLayoutParams(new ViewGroup.LayoutParams(
-	 * ViewGroup.LayoutParams.MATCH_PARENT,
-	 * ViewGroup.LayoutParams.WRAP_CONTENT));
-	 * freqTextView.setGravity(Gravity.CENTER_HORIZONTAL);
-	 * freqTextView.setText((mEqualizer.getCenterFreq(band) / 1000) + " Hz");
-	 * mLinearLayout.addView(freqTextView);
-	 * 
-	 * LinearLayout row = new LinearLayout(this);
-	 * row.setOrientation(LinearLayout.HORIZONTAL);
-	 * 
-	 * TextView minDbTextView = new TextView(this);
-	 * minDbTextView.setLayoutParams(new ViewGroup.LayoutParams(
-	 * ViewGroup.LayoutParams.WRAP_CONTENT,
-	 * ViewGroup.LayoutParams.WRAP_CONTENT)); minDbTextView.setText((minEQLevel
-	 * / 100) + " dB");
-	 * 
-	 * TextView maxDbTextView = new TextView(this);
-	 * maxDbTextView.setLayoutParams(new ViewGroup.LayoutParams(
-	 * ViewGroup.LayoutParams.WRAP_CONTENT,
-	 * ViewGroup.LayoutParams.WRAP_CONTENT)); maxDbTextView.setText((maxEQLevel
-	 * / 100) + " dB");
-	 * 
-	 * LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-	 * ViewGroup.LayoutParams.MATCH_PARENT,
-	 * ViewGroup.LayoutParams.WRAP_CONTENT); layoutParams.weight = 1; SeekBar
-	 * bar = new SeekBar(this); bar.setLayoutParams(layoutParams);
-	 * bar.setMax(maxEQLevel - minEQLevel);
-	 * bar.setProgress(mEqualizer.getBandLevel(band));
-	 * 
-	 * bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-	 * public void onProgressChanged(SeekBar seekBar, int progress, boolean
-	 * fromUser) { mEqualizer.setBandLevel(band, (short) (progress +
-	 * minEQLevel)); }
-	 * 
-	 * public void onStartTrackingTouch(SeekBar seekBar) {} public void
-	 * onStopTrackingTouch(SeekBar seekBar) {} });
-	 * 
-	 * row.addView(minDbTextView); row.addView(bar); row.addView(maxDbTextView);
-	 * 
-	 * mLinearLayout.addView(row); } }
-	 */
+    public class RecordAudio extends AsyncTask<Void, double[], Void> {
 
-	private void setupVisualizerFxAndUI() {
-		// Create a VisualizerView (defined below), which will render the
-		// simplified audio
-		// wave form to a Canvas.
-		mVisualizerView = new VisualizerView(this);
-		mTry = new TextView(this);
-		mVisualizerView.setLayoutParams(new ViewGroup.LayoutParams(
-				ViewGroup.LayoutParams.MATCH_PARENT,
-				(int) (VISUALIZER_HEIGHT_DIP * getResources()
-						.getDisplayMetrics().density)));
-		mLinearLayout.addView(mVisualizerView);
-		mLinearLayout.addView(mTry);
-		//mTry.setText("Hey there!");
-		// Create the Visualizer object and attach it to our media player.
-		mVisualizer = new Visualizer(mMediaPlayer.getAudioSessionId());
-		mVisualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
+        @Override
+        protected Void doInBackground(Void... arg0) {
 
-		mVisualizer.setDataCaptureListener(
-				new Visualizer.OnDataCaptureListener() {
-					public void onWaveFormDataCapture(Visualizer visualizer,
-							byte[] bytes, int samplingRate) {
-						mVisualizerView.updateVisualizer(bytes);
-					}
+            try {
+                // int bufferSize = AudioRecord.getMinBufferSize(frequency,
+                // AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+                int bufferSize = AudioRecord.getMinBufferSize(frequency, 
+                        channelConfiguration, audioEncoding); 
 
-					public void onFftDataCapture(Visualizer visualizer,
-							byte[] bytes, int samplingRate) {
-						mVisualizerView.updateVisualizerFFT(bytes);
+                AudioRecord audioRecord = new AudioRecord( 
+                        MediaRecorder.AudioSource.MIC, frequency, 
+                        channelConfiguration, audioEncoding, bufferSize); 
 
-						String str = new String(bytes);
-						Log.d("try", "str");
-						mTry.setText(str);
-					}
-				}, Visualizer.getMaxCaptureRate() / 2, true, false);
-	}
+                short[] buffer = new short[blockSize];
+                double[] toTransform = new double[blockSize];
 
-	@Override
-	protected void onPause() {
-		super.onPause();
+                audioRecord.startRecording();
 
-		if (isFinishing() && mMediaPlayer != null) {
-			mVisualizer.release();
-			// mEqualizer.release();
-			mMediaPlayer.release();
-			mMediaPlayer = null;
-		}
-	}
-}
+                // started = true; hopes this should true before calling
+                // following while loop
 
-/**
- * A simple class that draws waveform data received from a
- * {@link Visualizer.OnDataCaptureListener#onWaveFormDataCapture }
- */
-class VisualizerView extends View {
-	private byte[] mBytes;
-	protected byte[] mFFTBytes;
-	private float[] mPoints;
+                while (started) {
+                    int bufferReadResult = audioRecord.read(buffer, 0,
+                            blockSize);
 
-	private Rect mRect = new Rect();
+                    for (int i = 0; i < blockSize && i < bufferReadResult; i++) {
+                        toTransform[i] = (double) buffer[i] / 32768.0; // signed
+                                                                        // 16
+                    }                                       // bit
+                        transformer.ft(toTransform);
+                        publishProgress(toTransform);
 
-	private Paint mForePaint = new Paint();
 
-	public VisualizerView(Context context) {
-		super(context);
-		init();
-	}
 
-	private void init() {
-		mBytes = null;
+                }
 
-		mForePaint.setStrokeWidth(1f);
-		mForePaint.setAntiAlias(true);
-		mForePaint.setColor(Color.rgb(0, 128, 255));
-	}
+                audioRecord.stop();
 
-	public void updateVisualizer(byte[] bytes) {
-		mBytes = bytes;
-		invalidate();
-	}
+            } catch (Throwable t) {
+                t.printStackTrace();
+                Log.e("AudioRecord", "Recording Failed");
+            }
+            return null;
+        }
 
-	public void updateVisualizerFFT(byte[] bytes) {
-		mFFTBytes = bytes;
-		invalidate();
-	}
+        @Override
+        protected void onProgressUpdate(double[]... toTransform) {
 
-	@Override
-	protected void onDraw(Canvas canvas) {
-		super.onDraw(canvas);
+            canvas.drawColor(Color.BLACK);
 
-		if (mBytes == null) {
-			return;
-		}
+            for (int i = 0; i < toTransform[0].length; i++) {
+                int x = i;
+                int downy = (int) (100 - (toTransform[0][i] * 10));
+                int upy = 100;
 
-		if (mPoints == null || mPoints.length < mBytes.length * 4) {
-			mPoints = new float[mBytes.length * 4];
-		}
+                canvas.drawLine(x, downy, x, upy, paint);
+            }
 
-		mRect.set(0, 0, getWidth(), getHeight());
+            imageView.invalidate();
 
-		for (int i = 0; i < mBytes.length - 1; i++) {
-			mPoints[i * 4] = mRect.width() * i / (mBytes.length - 1);
-			mPoints[i * 4 + 1] = mRect.height() / 2
-					+ ((byte) (mBytes[i] + 128)) * (mRect.height() / 2) / 128;
-			mPoints[i * 4 + 2] = mRect.width() * (i + 1) / (mBytes.length - 1);
-			mPoints[i * 4 + 3] = mRect.height() / 2
-					+ ((byte) (mBytes[i + 1] + 128)) * (mRect.height() / 2)
-					/ 128;
-		}
+            // TODO Auto-generated method stub
+            // super.onProgressUpdate(values);
+        }
 
-		canvas.drawLines(mPoints, mForePaint);
-	}
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    public void onClick(View arg0) {
+        // TODO Auto-generated method stub
+        if (started) {
+            started = false;
+            startStopButton.setText("Start");
+            recordTask.cancel(true);
+        } else {
+            started = true;
+            startStopButton.setText("Stop");
+            recordTask = new RecordAudio();
+            recordTask.execute();
+        }
+    }
 }
