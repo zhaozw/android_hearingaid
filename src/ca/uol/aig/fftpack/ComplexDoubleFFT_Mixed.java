@@ -300,7 +300,8 @@ class ComplexDoubleFFT_Mixed
                        final double cc[], double c1[], double c2[], double ch[], double ch2[],
                        final double wtable[], int offset, int isign)
      {
-          int idij, idlj, idot, ipph, i, j, k, l, jc, lc, ik, nt, idj, idl, inc, idp;
+          @SuppressWarnings("unused")
+		int idij, idlj, idot, ipph, i, j, k, l, jc, lc, ik, nt, idj, idl, inc, idp;
           double  wai, war;
           int iw1;
 
