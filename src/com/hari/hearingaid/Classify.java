@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.widget.ImageView;
+import android.widget.TextView;
 import ca.uol.aig.fftpack.RealDoubleFFT;
 
 public class Classify extends Activity {
@@ -62,6 +63,7 @@ public class Classify extends Activity {
 	}
 
 	public class RecordAudio extends AsyncTask<Void, double[], Void> {
+		TextView tv = (TextView) findViewById(R.id.tv1);
 
 		@Override
 		protected Void doInBackground(Void... arg0) {
@@ -87,7 +89,9 @@ public class Classify extends Activity {
 						toTransform[i] = (double) buffer[i] / 32768.0;
 
 					}
+
 					transformer.ft(toTransform);
+
 					publishProgress(toTransform);
 
 				}
@@ -105,9 +109,19 @@ public class Classify extends Activity {
 		protected void onProgressUpdate(double[]... toTransform) {
 
 			canvas.drawColor(Color.BLACK);
-
+			double max = toTransform[0][0];
 			for (int i = 0; i < toTransform[0].length; i++) {
 				int x = i;
+				int dummy = i;
+				if (toTransform[0][dummy] > 50) {
+
+					if (toTransform[0][i] > max) {
+						max = toTransform[0][i];
+						Log.d("Max", "" + dummy);
+						tv.setText("" + ((double) (dummy)) / 512 * 8000 + " Hz"
+								+ "   " + max);
+					}
+				}
 				int downy = (int) (200 - (toTransform[0][i] * 10));
 				int upy = 200;
 
