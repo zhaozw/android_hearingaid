@@ -2,25 +2,23 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    android:background="#000000">
 
-    <!-- <TextView
+    <TextView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="@string/hello_world" /> -->
+        android:textColor="#FFFFFF"
+        android:text="@string/hello_world" /> 
 
     <ImageView
         android:contentDescription="@string/hello_world"
         android:id="@+id/ImageView01"
+        android:layout_gravity="top"
         android:layout_width="match_parent"
-        android:layout_height="200dip" >
+        android:layout_height="300dip" >
     </ImageView>
 
-    <Button
-        android:id="@+id/StartStopButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/hello_world" >
-    </Button>
+    
 
 </LinearLayout>
