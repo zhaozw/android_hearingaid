@@ -110,16 +110,16 @@ public class Classify extends Activity {
 
 			canvas.drawColor(Color.BLACK);
 			double max = toTransform[0][0];
+			int dummy=0;
 			for (int i = 0; i < toTransform[0].length; i++) {
 				int x = i;
-				int dummy = i;
-				if (toTransform[0][dummy] > 50) {
+				dummy = i;
+				if (toTransform[0][dummy] > 30) {
 
 					if (toTransform[0][i] > max) {
 						max = toTransform[0][i];
 						Log.d("Max", "" + dummy);
-						tv.setText("" + ((double) (dummy)) / 512 * 8000 + " Hz"
-								+ "   " + max);
+						
 					}
 				}
 				int downy = (int) (200 - (toTransform[0][i] * 10));
@@ -127,7 +127,8 @@ public class Classify extends Activity {
 
 				canvas.drawLine(x, downy, x, upy, paint);
 			}
-
+			tv.setText("Peak Frequency : " + ((double) (dummy)) / 512 * 8000 + " Hz"
+					+ "    Magnitude : " + max);
 			imageView.invalidate();
 		}
 
